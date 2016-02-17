@@ -29,4 +29,15 @@ void preProcess(unsigned char **inputImage, unsigned char **edgeImage,
 	unsigned char **d_originalImage, unsigned char **d_edgeImage,
 	const std::string & filename) {
 	cudaFree(0);
+	
+	cv::Mat image;
+	image = cv::imread(filename.c_str(), CV_LOAD_IMAGE_COLOR);
+	if (image.empty()) {
+		std::cerr << "Couldn't open file: " << filename << std::endl;
+		exit(1);
+	}
+	
+	cv::cvtColor(image, imageRGBA, CV_BGR2RGBA);
+	
+	
 }
