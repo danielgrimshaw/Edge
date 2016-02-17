@@ -7,11 +7,14 @@
 
 #include "targetver.h"
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
+
 #include <stdio.h>
 #include <tchar.h>
 #include <stdlib.h>
 #include <iostream>
 
-
-
-// TODO: reference additional headers your program requires here
+#include <cuda.h>
+#include <cuda_runtime.h>
