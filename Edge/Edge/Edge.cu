@@ -30,10 +30,20 @@ int _tmain(int argc, _TCHAR * argv[]) {
 
 	preProcess(&h_originalImage, &h_edgeImage, &d_originalImage, &d_edgeImage, inputFile);
 	
-	int threadsPerBlock =  numPixels < 256 ? numPixels : 256;
-	int blocksPerGrid = (numPixels + threadsPerBlock - 1) / threadsPerBlock;
+	const int threadsInBlock = numPixels < 256 ? numPixels : 256;
+	const dim3 threadsPerBlock((int)sqrt(threadsInBlock), (int)sqrt(threadsInBlock));
+	const dim3 blocksPerGrid((numPixels + threadsInBlock - 1) / threadsInBlock);
 
 	edgeDetect<<<blocksPerGrid, threadsPerBlock>>>(d_originalImage, d_edgeImage, numRows, numCols);
+
+	cudaDeviceSynchronize();
+
+	cudaMemcpy(h_edgeImage, d_edgeImage, sizeof(uchar4) * numPixels, cudaMemcpyDeviceToHost);
+
+	postProcess(outputFile, h_edgeImage);
+
+	cudaFree(d_originalImage);
+	cudaFree(d_edgeImage);
 
 	return 0;
 }
@@ -80,3 +90,8 @@ void preProcess(uchar4 **inputImage, uchar4 **edgeImage,
 	cudaMemcpy(*d_originalImage, *inputImage, sizeof(uchar4) * numPixels, cudaMemcpyHostToDevice);
 }
 	
+void postProcess(const std::string & output_file,uchar4 *edgeImage) {
+	cv::Mat output(numRows, numCols, CV_8UC4, (void *)edgeImage);
+
+	cv::imwrite(output_file.c_str(), output);
+}
