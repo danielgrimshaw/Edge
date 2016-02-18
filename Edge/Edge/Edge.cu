@@ -3,6 +3,14 @@
 
 #include "stdafx.h"
 
+size_t numPixels;
+int numRows, numCols;
+
+__global__ void edgeDetect(const uchar4 * const origImage,
+	uchar4 * const edgeImage,
+	int numRows, int numCols) {
+	//TODO
+}
 
 int _tmain(int argc, _TCHAR * argv[]) {
 	using namespace std;
@@ -21,6 +29,11 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	}
 
 	preProcess(&h_originalImage, &h_edgeImage, &d_originalImage, &d_edgeImage, inputFile);
+	
+	int threadsPerBlock =  numPixels < 256 ? numPixels : 256;
+	int blocksPerGrid = (numPixels + threadsPerBlock - 1) / threadsPerBlock;
+
+	edgeDetect<<<blocksPerGrid, threadsPerBlock>>>(d_originalImage, d_edgeImage, numRows, numCols);
 
 	return 0;
 }
@@ -28,6 +41,7 @@ int _tmain(int argc, _TCHAR * argv[]) {
 void preProcess(uchar4 **inputImage, uchar4 **edgeImage,
 	uchar4 **d_originalImage, uchar4 **d_edgeImage,
 	const std::string & filename) {
+	//Pre-process the image
 	cudaFree(0);
 
 	cv::Mat imageOrig;
@@ -53,7 +67,9 @@ void preProcess(uchar4 **inputImage, uchar4 **edgeImage,
 	*inputImage = (uchar4 *)imageOrig.ptr<unsigned char>(0);
 	*edgeImage = (uchar4 *)imageEdge.ptr<unsigned char>(0);
 
-	const size_t numPixels = imageOrig.rows * imageOrig.cols;
+	numRows = imageOrig.rows;
+	numCols = imageOrig.cols;
+	numPixels = imageOrig.rows * imageOrig.cols;
 
 	// allocate device memory
 	cudaMalloc(d_originalImage, sizeof(uchar4) * numPixels);
