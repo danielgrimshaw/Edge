@@ -17,7 +17,7 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	string inputFile;
 	string outputFile;
 	uchar4 *h_originalImage, *d_originalImage;
-	uchar4 *h_edgeImage, *d_edgeImage;
+	unsigned char *h_edgeImage, *d_edgeImage;
 
 	if (argc == 3) {
 		inputFile = string((char *)argv[1]);
@@ -38,7 +38,7 @@ int _tmain(int argc, _TCHAR * argv[]) {
 
 	cudaDeviceSynchronize();
 
-	cudaMemcpy(h_edgeImage, d_edgeImage, sizeof(uchar4) * numPixels, cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_edgeImage, d_edgeImage, sizeof(unsigned char) * numPixels, cudaMemcpyDeviceToHost);
 
 	postProcess(outputFile, h_edgeImage);
 
@@ -48,8 +48,8 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	return 0;
 }
 
-void preProcess(uchar4 **inputImage, uchar4 **edgeImage,
-	uchar4 **d_originalImage, uchar4 **d_edgeImage,
+void preProcess(uchar4 **inputImage, unsigned char **edgeImage,
+	uchar4 **d_originalImage, unsigned char **d_edgeImage,
 	const std::string & filename) {
 	//Pre-process the image
 	cudaFree(0);
@@ -67,7 +67,7 @@ void preProcess(uchar4 **inputImage, uchar4 **edgeImage,
 	cv::cvtColor(image, imageOrig, CV_BGR2RGBA);
 	
 	// allocate memory for the output
-	imageEdge.create(image.rows, image.cols, CV_8UC4);
+	imageEdge.create(image.rows, image.cols, CV_8UC1);
 
 	if (!imageOrig.isContinuous() || !imageEdge.isContinuous()) {
 		std::cerr << "Images aren't continuous!!! Aborting." << std::endl;
@@ -75,7 +75,7 @@ void preProcess(uchar4 **inputImage, uchar4 **edgeImage,
 	}
 	
 	*inputImage = (uchar4 *)imageOrig.ptr<unsigned char>(0);
-	*edgeImage = (uchar4 *)imageEdge.ptr<unsigned char>(0);
+	*edgeImage = imageEdge.ptr<unsigned char>(0);
 
 	numRows = imageOrig.rows;
 	numCols = imageOrig.cols;
@@ -84,14 +84,14 @@ void preProcess(uchar4 **inputImage, uchar4 **edgeImage,
 	// allocate device memory
 	cudaMalloc(d_originalImage, sizeof(uchar4) * numPixels);
 	cudaMalloc(d_edgeImage, sizeof(uchar4) * numPixels);
-	cudaMemset(*d_edgeImage, 0, sizeof(uchar4) * numPixels);
+	cudaMemset(*d_edgeImage, 0, sizeof(unsigned char) * numPixels);
 
 	// copy inputs to GPU
 	cudaMemcpy(*d_originalImage, *inputImage, sizeof(uchar4) * numPixels, cudaMemcpyHostToDevice);
 }
 	
-void postProcess(const std::string & output_file,uchar4 *edgeImage) {
-	cv::Mat output(numRows, numCols, CV_8UC4, (void *)edgeImage);
+void postProcess(const std::string & output_file, unsigned char *edgeImage) {
+	cv::Mat output(numRows, numCols, CV_8UC1, (void *)edgeImage);
 
 	cv::imwrite(output_file.c_str(), output);
 }
